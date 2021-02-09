@@ -1,10 +1,13 @@
 # USAGE
-# python multi_object_tracking_fast.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt \
+# python MOTF_process_pool.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt \
 #	--model mobilenet_ssd/MobileNetSSD_deploy.caffemodel --video race.mp4
+
+# watch CPU loading on the ubuntu
+# ps axu | grep [M]OTF_process_pool.py | awk '{print $2}' | xargs -n1 -I{} ps -o sid= -p {} | xargs -n1 -I{} ps --forest -o user,pid,ppid,cpuid,%cpu,%mem,stat,start,time,command -g {}
 
 # import the necessary packages
 from imutils.video import FPS
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
 import numpy as np
 import argparse
 import imutils
@@ -19,42 +22,25 @@ def init_tracker(core_num, box,rgb):
     rect = dlib.rectangle(box[0], box[1], box[2], box[3])
     tracker_list[core_num].start_track(rgb, rect)
 
+# for pool testing 
 def map_test(i):
     print(i)
-    #c = i
-    #return i
 
 def start_tracker(input_data):  
-    '''
-    0:label
-    1:rgb
-    2:frame
-    3:tracker_list
-    4:cv2
-    '''
-    n_label = 0
-    n_rgb = 1
-    n_frame = 2
-    n_tracker = 3
-    n_cv2 = 4
-    print("test 1")
-    print(input_data[n_label])
-    #input_data[n_tracker].update(input_data[n_rgb])
-    #pos = input_data[n_tracker].get_position()
-    # unpack the position object
-    #startX = int(pos.left())
-    #startY = int(pos.top())
-    #endX = int(pos.right())
-    #endY = int(pos.bottom())
-    #print(pos)
-    #strarX = 0
-    #strarY = 0
-    #endX = 0
-    #endY = 0
-    #return startX, startY, endX, endY
-    #input_data[n_cv2].rectangle(input_data[n_frame], (startX, startY), (endX, endY),(0, 255, 0), 2)
-    #input_data[n_cv2].putText(input_data[n_frame], input_data[n_label], (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+    n_rgb = 0
+    n_tracker = 1 
 
+    tl_num = input_data[n_tracker]
+    print("start_tracker, track_list[%d]" % tl_num)
+    tracker_list[tl_num].update(input_data[n_rgb])
+    pos = tracker_list[tl_num].get_position()
+    # unpack the position object
+    startX = int(pos.left())
+    startY = int(pos.top())
+    endX = int(pos.right())
+    endY = int(pos.bottom())
+    bbox = (startX, startY, endX, endY)
+    return bbox
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -84,14 +70,13 @@ net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 # initialize the video stream and output video writer
 print("[INFO] starting video stream...")
 vs = cv2.VideoCapture(args["video"])
-writer = None
 
 # start the frames per second throughput estimator
 fps = FPS().start()
 
 detection_ok = False
+print_number_test_not_tracker = False
 core_num = 0
-
 
 # grab the frame dimensions and convert the frame to a blob
 (grabbed, frame) = vs.read()
@@ -102,32 +87,36 @@ blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
 net.setInput(blob)
 detections = net.forward()
 
-for i in np.arange(0, detections.shape[2]):
-    confidence = detections[0, 0, i, 2]
+if print_number_test_not_tracker == False:
+    # detecting how many person on this frame
+    for i in np.arange(0, detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
 
-    if confidence > args["confidence"]:
-        idx = int(detections[0, 0, i, 1])
-        label = CLASSES[idx]
-
-        if CLASSES[idx] != "person":
-            continue
+        if confidence > args["confidence"]:
+            idx = int(detections[0, 0, i, 1])
+            label = CLASSES[idx]
+            #print("label:%s" % label)
+            if CLASSES[idx] != "person":
+                continue
                 
-        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-        (startX, startY, endX, endY) = box.astype("int")
-        bb = (startX, startY, endX, endY)
-        #print(bb)
-        cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-        cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-        init_tracker(core_num, bb, rgb);
-        core_num = core_num + 1
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+            bb = (startX, startY, endX, endY)
+            print(bb)
+            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
+            print("label:%s" % label)
+            cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+            init_tracker(core_num, bb, rgb);
+            core_num = core_num + 1
 
-#if core_num >= (os.cpu_count()-1):
-#    pool = Pool(os.cpu_count()-1)
-#else:
-#    print("pool core_num:%d" % core_num)
-#    pool = Pool(core_num)
-
-pool = Pool(11)
+    if core_num >= (os.cpu_count()-1):
+        pool = Pool(os.cpu_count()-1)
+    else:
+        print("pool core_num:%d" % core_num)
+        pool = Pool(core_num)
+else:
+    pool = Pool(11)
+    detection_ok = True
 
 # loop over frames from the video file stream
 while True:
@@ -148,56 +137,45 @@ while True:
 
     input_data = []
     for i in range(core_num):
-            #print(i)
         input_data.append([])
-        input_data[i].append(label)
         input_data[i].append(rgb)
-        input_data[i].append(frame)
-        input_data[i].append(tracker_list[i])
-        input_data[i].append(cv2)
-        #print(input_data[i][0])
+        input_data[i].append(i)
 
-    #pool.map_async(map_test, [1,2,3,4,5,6,7,8,9,10,11])
-    pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
+     
+    if print_number_test_not_tracker == True:
+        #pool.map_async(map_test, [1,2,3,4,5,6,7,8,9,10,11])
+        pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
+    else:
+        # can not use map_async,otherwise it will not wait all trackers to finish the job,
+        # it will just executing print("before operating cv2") directly
         #pool_output = pool.map_async(start_tracker, input_data)     
-    #pool.map_async(start_tracker, input_data)     
-    #pool.close()
-    #pool.join()
-        #print(pool_output.get())
-        #for i in pool_output.get():
-            #cv2.rectangle(frame, (i[0], i[1]), (i[2], i[3]),(0, 255, 0), 2)
-            #cv2.putText(frame, label, (i[0], i[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-        #cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
-        #cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+        #pool.close()
+        #pool.join()
+        pool_output = pool.map(start_tracker, input_data)    
 
-	# check to see if we should write the frame to disk
-    #if writer is not None:
-        #writer.write(frame)
+        print("before operating cv2")
+        for i in range(len(pool_output)):
+            #print(pool_output[i][0])
+            #print(box)
+            (startX, startY, endX, endY) = pool_output[i]
+            cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
+            cv2.putText(frame, "preson", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 
-    # show the output frame
-    #if detection_ok == False:
-        #(startX, startY, endX, endY) = bbq
-        #cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-        #cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
     print("before imshow")
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
 
-	# if the `q` key was pressed, break from the loop
+    # if the `q` key was pressed, break from the loop
     if key == ord("q"):
         break
 
-	# update the FPS counter
+    # update the FPS counter
     fps.update()
 
 # stop the timer and display FPS information
 fps.stop()
 print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
 print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
-
-# check to see if we need to release the video writer pointer
-if writer is not None:
-	writer.release()
 
 # do a bit of cleanup
 cv2.destroyAllWindows()
