@@ -1,0 +1,19 @@
+
+please run below command to execute this program
+$ ./run_MOTF.sh
+
+and using below command at anoter terminal to watch all cpu loading
+$ ps axu | grep [M]OTF_process_pool.py | awk '{print $2}' | xargs -n1 -I{} ps -o sid= -p {} | xargs -n1 -I{} ps --forest -o user,pid,ppid,cpuid,%cpu,%mem,stat,start,time
+
+or
+$ top | grep python
+or
+$ htop
+
+if you wanna try another video, please visit below link, and modify video path in the run_MOTF.sh
+https://drive.google.com/file/d/199_SXr-QRyrLthkaNHbA0ZSjT_TdmJzB/view?usp=sharing
+
+tracked result:
+(1) race.mp4: no good
+(2) 30_clip.mp4: good
+
