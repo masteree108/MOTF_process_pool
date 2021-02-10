@@ -61,7 +61,7 @@ def start_tracker(input_data):
 
 def detect_people_and_tracker_init():
     # detecting how many person on this frame
-    processor_num = 0
+    person_num = 0
     for i in np.arange(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
 
@@ -79,15 +79,15 @@ def detect_people_and_tracker_init():
             cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
             print("label:%s" % label)
             cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-            init_tracker(processor_num, bb, rgb);
-            processor_num = processor_num + 1 
+            init_tracker(person_num, bb, rgb);
+            person_num = person_num + 1 
 
-    if processor_num >= (os.cpu_count()-1):
+    if person_num >= (os.cpu_count()-1):
         pool = Pool(os.cpu_count()-1)
 
-    return processor_num
+    return person_num
 
-def main(processor_num, detection_ok, rgb, pool, frame):
+def main(person_num, detection_ok, rgb, pool, frame):
     # loop over frames from the video file stream
     while True:
 	# grab the next frame from the video file
@@ -100,7 +100,7 @@ def main(processor_num, detection_ok, rgb, pool, frame):
 
 	    # resize the frame for faster processing and then convert the
 	    # frame from BGR to RGB ordering (dlib needs RGB ordering)
-            frame = imutils.resize(frame, width=600)
+            frame = imutils.resize(frame, width=800)
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         else:
             detection_ok = True
@@ -110,7 +110,7 @@ def main(processor_num, detection_ok, rgb, pool, frame):
             pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
         else:
             input_data = []
-            for i in range(processor_num):
+            for i in range(person_num):
                 input_data.append([])
                 input_data[i].append(rgb)
                 input_data[i].append(i)
@@ -183,20 +183,20 @@ if __name__ == '__main__':
     # step 2. detecting how many people on this frame
     # step 1:
     (grabbed, frame) = vs.read()
-    frame = imutils.resize(frame, width=600)
+    frame = imutils.resize(frame, width=800)
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
     net.setInput(blob)
     detections = net.forward()
     # step 2:
-    processor_num = 0
+    person_num = 0
     if print_number_test_not_tracker == False:
-        processor_num = detect_people_and_tracker_init()
-        if processor_num >= (os.cpu_count()-1):
+        person_num = detect_people_and_tracker_init()
+        if person_num >= (os.cpu_count()-1):
             pool = Pool(os.cpu_count()-1)
         else:
-            pool = Pool(processes = processor_num)
+            pool = Pool(processes = person_num)
     else:
         pool = Pool(11)
         detection_ok = True
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     fps = FPS().start()
 
     # tracking person on the video
-    main(processor_num, detection_ok, rgb, pool, frame)
+    main(person_num, detection_ok, rgb, pool, frame)
     pool.close()
     pool.join()
 
