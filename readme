@@ -1,15 +1,22 @@
-please run below command to execute this program
+1. multi-core method
+	please run below command to execute the program which using multi-core method
     (1) dlib tracker
        $ ./run_MOTF_dlib.sh
     (2) cv_tracker
        $ ./run_MOTF_cvtracker.sh
 
-and using below command at anoter terminal to watch all cpu loading
-$ ps axu | grep [M]OTF_process_pool_dlib.py | awk '{print $2}' | xargs -n1 -I{} ps -o sid= -p {} | xargs -n1 -I{} ps --forest -o user,pid,ppid,cpuid,%cpu,%mem,s
-or
-$ top | grep python
-or
-$ htop
+	and using below command at anoter terminal to watch all cpu loading
+	$ ps axu | grep [M]OTF_process_pool_dlib.py | awk '{print $2}' | xargs -n1 -I{} ps -o sid= -p {} | xargs -n1 -I{} ps --forest -o user,pid,ppid,cpuid,%cpu,%mem,s
+	or
+	$ top | grep python
+	or
+	$ htop
+
+2. one core method(using multi-thread)
+   $ ./run_multi_cvtracker.sh
+
+3. multi-core + multi-thread
+	not finished yet
 
 if you wanna try another video, please visit below link, and modify video path in the run_MOTF_dlib.sh or run_MOTF_cv_tracker.sh
 https://drive.google.com/drive/folders/1UAoMQ07fZSa4XdDvKyOZhzxBrBSE1cxo?usp=sharing
