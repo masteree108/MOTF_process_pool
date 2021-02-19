@@ -82,9 +82,6 @@ def detect_people_and_tracker_init():
             init_tracker(person_num, bb, rgb);
             person_num = person_num + 1 
 
-    if person_num >= (os.cpu_count()-1):
-        pool = Pool(os.cpu_count()-1)
-
     return person_num
 
 def main(person_num, detection_ok, rgb, pool, frame):
