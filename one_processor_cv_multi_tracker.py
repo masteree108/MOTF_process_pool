@@ -144,7 +144,6 @@ if __name__ == '__main__':
     vs = cv2.VideoCapture(args["video"])
     
     # for saving tracker objects
-    #tracker_list = []
     multi_tracker = cv2.MultiTracker_create()
 
     # detected flag

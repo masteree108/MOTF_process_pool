@@ -117,12 +117,6 @@ def main(person_num, detection_ok, pool, frame):
 	    # check to see if we have reached the end of the video file
             if frame is None:
                 break
-
-	    # resize the frame for faster processing and then convert the
-	    # frame from BGR to RGB ordering (dlib needs RGB ordering)
-            #frame = imutils.resize(frame, width=600)
-            #frame = cv2.resize(frame, 800)
-            #rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         else:
             detection_ok = True
         
