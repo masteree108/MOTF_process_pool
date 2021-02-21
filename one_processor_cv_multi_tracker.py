@@ -49,8 +49,8 @@ def read_user_input_info():
 
     return args
 
-def init_tracker(core_num, box, frame):
-    print("core_num:%d" % core_num)
+def init_tracker(detect_people_num, box, frame):
+    #print("detect_people_,number:%d" % detect_people_num)
     # grab the appropiate object tracker using our dictionary of 
     # OpenCV object tracker objects
     # it should brings (left, top, width, height) to tracker.init() function
@@ -62,7 +62,7 @@ def init_tracker(core_num, box, frame):
 
 def detect_people_and_tracker_init():
     # detecting how many person on this frame
-    person_num = 0
+    detect_people_qty = 0
     for i in np.arange(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
 
@@ -76,14 +76,14 @@ def detect_people_and_tracker_init():
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             bb = (startX, startY, endX, endY)
-            print(bb)
+            #print(bb)
             cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-            print("label:%s" % label)
+            #print("label:%s" % label)
             cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
-            init_tracker(person_num, bb, frame)
-            person_num = person_num + 1 
-    print("person_num:%d" % person_num)
-    return person_num
+            init_tracker(detect_people_qty, bb, frame)
+            detect_people_qty = detect_people_qty + 1 
+    print("detect_people_quantity:%d" % detect_people_qty)
+    return detect_people_qty
 
 def main(frame):
     # loop over frames from the video file stream
@@ -95,7 +95,7 @@ def main(frame):
         if frame is None:
             break
         
-        frame = imutils.resize(frame, width=800)
+        frame = imutils.resize(frame, width=frame_size_width)
         ok, bboxes = multi_tracker.update(frame)
         if ok:                                         
             for i, newbox in enumerate(bboxes):
@@ -149,6 +149,8 @@ if __name__ == '__main__':
     # detected flag
     detection_ok = False
 
+    frame_size_width = 1500
+
     # if below variable set to True, this result will not show tracking bbox on the video
     # ,it will show number on the terminal
     print_number_test_not_tracker = False
@@ -157,7 +159,9 @@ if __name__ == '__main__':
     # step 2. detecting how many people on this frame
     # step 1:
     (grabbed, frame) = vs.read()
-    frame = imutils.resize(frame, width=800)
+    frame = imutils.resize(frame, width=frame_size_width)
+    print("frame_size:")
+    print(frame.shape[:2])
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
     net.setInput(blob)

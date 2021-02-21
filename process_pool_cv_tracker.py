@@ -49,8 +49,8 @@ def read_user_input_info():
 
     return args
 
-def init_tracker(core_num, box, frame):
-    print("core_num:%d" % core_num)
+def init_tracker(person_num, box, frame):
+    #print("person_num:%d" % person_num)
     # grab the appropiate object tracker using our dictionary of 
     # OpenCV object tracker objects
     cv_tracker = get_algorithm_tracker("CSRT")
@@ -60,7 +60,7 @@ def init_tracker(core_num, box, frame):
     # parameters are left, top , right and bottom in the box 
     # so those parameters need to minus like below to get width and height 
     bbox = (box[0], box[1], abs(box[0]-box[2]), abs(box[1]-box[3]))
-    tracker_list[core_num].init(frame, bbox) 
+    tracker_list[person_num].init(frame, bbox) 
 
 
 # for pool testing 
@@ -72,7 +72,7 @@ def start_tracker(input_data):
     n_tracker = 1 
 
     tl_num = input_data[n_tracker]
-    print("start_tracker, track_list[%d]" % tl_num)
+    #print("start_tracker, track_list[%d]" % tl_num)
     ok, bbox = tracker_list[tl_num].update(input_data[n_frame])
     #print(bbox)
     startX = int(bbox[0])
@@ -99,15 +99,15 @@ def detect_people_and_tracker_init():
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             bb = (startX, startY, endX, endY)
-            print(bb)
+            #print(bb)
             cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-            print("label:%s" % label)
+            #print("label:%s" % label)
             cv2.putText(frame, label, (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
             init_tracker(person_num, bb, frame);
             person_num = person_num + 1 
     return person_num
 
-def main(person_num, detection_ok, pool, frame):
+def main(detect_people_qty, detection_ok, pool, frame):
     # loop over frames from the video file stream
     while True:
 	# grab the next frame from the video file
@@ -120,13 +120,13 @@ def main(person_num, detection_ok, pool, frame):
         else:
             detection_ok = True
         
-        frame = imutils.resize(frame, width=800)
+        frame = imutils.resize(frame, width=frame_size_width)
         if print_number_test_not_tracker == True:
             #pool.map_async(map_test, [1,2,3,4,5,6,7,8,9,10,11])
             pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
         else:
             input_data = []
-            for i in range(person_num):
+            for i in range(detect_people_qty):
                 input_data.append([])
                 input_data[i].append(frame)
                 input_data[i].append(i)
@@ -188,6 +188,8 @@ if __name__ == '__main__':
     # for saving tracker objects
     tracker_list = []
 
+    frame_size_width = 1500
+
     # detected flag
     detection_ok = False
 
@@ -199,19 +201,20 @@ if __name__ == '__main__':
     # step 2. detecting how many people on this frame
     # step 1:
     (grabbed, frame) = vs.read()
-    frame = imutils.resize(frame, width=800)
+    frame = imutils.resize(frame, width=frame_size_width)
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
     net.setInput(blob)
     detections = net.forward()
     # step 2:
-    person_num = 0
+    detect_people_qty = 0
     if print_number_test_not_tracker == False:
-        person_num = detect_people_and_tracker_init()
-        if person_num >= (os.cpu_count()-1):
+        detect_people_qty = detect_people_and_tracker_init()
+        print("detect_people_qty: %d" % detect_people_qty) 
+        if detect_people_qty >= (os.cpu_count()-1):
             pool = Pool(os.cpu_count()-1)
         else:
-            pool = Pool(processes = person_num)
+            pool = Pool(processes = detect_people_qty)
     else:
         pool = Pool(11)
         detection_ok = True
@@ -220,7 +223,7 @@ if __name__ == '__main__':
     fps = FPS().start()
 
     # tracking person on the video
-    main(person_num, detection_ok, pool, frame)
+    main(detect_people_qty, detection_ok, pool, frame)
     pool.close()
     pool.join()
 

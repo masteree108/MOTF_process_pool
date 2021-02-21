@@ -52,13 +52,13 @@ def init_cv_multi_tracker():
     # it should brings (left, top, width, height) to tracker.init() function
     # parameters are left, top , right and bottom in the box 
     # so those parameters need to minus like below to get width and height 
-    left_num = detect_people_num % using_processor_num
-    process_num = int(detect_people_num / using_processor_num)
+    left_num = detect_people_qty % using_processor_qty
+    process_num = int(detect_people_qty / using_processor_qty)
     processor_task_num = []
     process_num_ct = 0
     #print("bboxes:")
     #print(bboxes)
-    for i in range(using_processor_num):
+    for i in range(using_processor_qty):
         task_ct = 0
         tracker = cv2.MultiTracker_create()
         for j in range(process_num_ct, process_num_ct + process_num):
@@ -73,7 +73,7 @@ def init_cv_multi_tracker():
         processor_task_num.append(task_ct)
     if left_num != 0:
         counter = 0
-        k = detect_people_num - using_processor_num * process_num 
+        k = detect_people_qty - using_processor_qty * process_num 
         for k in range(k, k+left_num):
             #print("k:%d" % k)
             bbox =(bboxes[k][0], bboxes[k][1] ,abs(bboxes[k][0]-bboxes[k][2]), abs(bboxes[k][1]-bboxes[k][3]))
@@ -95,7 +95,7 @@ def start_tracker(input_data):
     n_tracker = 1 
 
     tl_num = input_data[n_tracker]
-    print("start_tracker, track_list[%d]" % tl_num)
+    #print("start_tracker, track_list[%d]" % tl_num)
 
     ok, bboxes_org = cv_multi_tracker_list[tl_num].update(input_data[n_frame])
     #print(bboxes_org)
@@ -110,7 +110,7 @@ def start_tracker(input_data):
     return bboxes_transfer
 
 
-def detect_people_number():
+def detect_people_quantity():
     # detecting how many person on this frame
     person_num = 0
     for i in np.arange(0, detections.shape[2]):
@@ -119,7 +119,7 @@ def detect_people_number():
         if confidence > args["confidence"]:
             idx = int(detections[0, 0, i, 1])
             label = CLASSES[idx]
-            print("label:%s" % label)
+            #print("label:%s" % label)
             if CLASSES[idx] != "person":
                 continue
                 
@@ -134,7 +134,7 @@ def detect_people_number():
             person_num = person_num + 1 
     return person_num
 
-def main(detect_people_num, detection_ok, pool, frame, cv_multi_tracker_list):
+def main(detect_people_qty, detection_ok, pool, frame):
     # loop over frames from the video file stream
     while True:
 	# grab the next frame from the video file
@@ -147,13 +147,15 @@ def main(detect_people_num, detection_ok, pool, frame, cv_multi_tracker_list):
         else:
             detection_ok = True
 
-        frame = imutils.resize(frame, width=800)
+        frame = imutils.resize(frame, width=frame_size_width)
+        print("frame size:")
+        print(frame.shape[:2])
         if print_number_test_not_tracker == True:
             #pool.map_async(map_test, [1,2,3,4,5,6,7,8,9,10,11])
             pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
         else:
             input_data = []
-            for i in range(using_processor_num):
+            for i in range(using_processor_qty):
                 input_data.append([])
                 input_data[i].append(frame)
                 input_data[i].append(i)
@@ -221,7 +223,9 @@ if __name__ == '__main__':
     cv_multi_tracker_list = []
     bboxes = []
     processor_task_num = []
-    
+
+    frame_size_width = 1500
+
     # detected flag
     detection_ok = False
 
@@ -233,30 +237,30 @@ if __name__ == '__main__':
     # step 2. detecting how many people on this frame
     # step 1:
     (grabbed, frame) = vs.read()
-    frame = imutils.resize(frame, width=800)
+    frame = imutils.resize(frame, width=frame_size_width)
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
     net.setInput(blob)
     detections = net.forward()
     # step 2:
-    detect_people_num = 0
-    using_processor_num = 0
+    detect_people_qty = 0
+    using_processor_qty = 0
     if print_number_test_not_tracker == False:
-        detect_people_num = detect_people_number()
-        using_processor_num = os.cpu_count()-1
-        if detect_people_num >= (os.cpu_count()-1):
-            using_processor_num = os.cpu_count()-1
+        detect_people_qty = detect_people_quantity()
+        using_processor_qty = os.cpu_count()-1
+        if detect_people_qty >= (os.cpu_count()-1):
+            using_processor_qty = os.cpu_count()-1
             processor_task_num = init_cv_multi_tracker()
             pool = Pool(os.cpu_count()-1)
         else:
-            using_processor_num = detect_people_num
+            using_processor_qty = detect_people_qty
             processor_task_num = init_cv_multi_tracker()
-            pool = Pool(processes = detect_people_num)
+            pool = Pool(processes = detect_people_qty)
     else:
         pool = Pool(11)
         detection_ok = True
-    print("using processors number: %d" % using_processor_num)
-    print("detect people umber: %d" % detect_people_num)
+    print("using processors quantity: %d" % using_processor_qty)
+    print("detect people quantity: %d" % detect_people_qty)
     print("processor_task_number:")
     print(processor_task_num)
 
@@ -264,7 +268,7 @@ if __name__ == '__main__':
     fps = FPS().start()
 
     # tracking person on the video
-    main(detect_people_num, detection_ok, pool, frame, cv_multi_tracker_list)
+    main(detect_people_qty, detection_ok, pool, frame)
     pool.close()
     pool.join()
 
