@@ -148,8 +148,6 @@ def main(detect_people_qty, detection_ok, pool, frame):
             detection_ok = True
 
         frame = imutils.resize(frame, width=frame_size_width)
-        print("frame size:")
-        print(frame.shape[:2])
         if print_number_test_not_tracker == True:
             #pool.map_async(map_test, [1,2,3,4,5,6,7,8,9,10,11])
             pool.map(map_test, [1,2,3,4,5,6,7,8,9,10,11])
@@ -169,8 +167,8 @@ def main(detect_people_qty, detection_ok, pool, frame):
             pool_output = pool.map(start_tracker, input_data)    
             #print(pool_output)
 
-            print("before operating cv2")
-            print("len(pool_output):%d" % len(pool_output))
+            #print("before operating cv2")
+            #print("len(pool_output):%d" % len(pool_output))
             for i in range(len(pool_output)):
                 #print(pool_output[i][0])
                 #print(box)
@@ -180,7 +178,7 @@ def main(detect_people_qty, detection_ok, pool, frame):
                     cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
                     cv2.putText(frame, "preson", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 
-        print("before imshow")
+        #print("before imshow")
         cv2.imshow("Frame", frame)
         key = cv2.waitKey(1) & 0xFF
 
@@ -224,7 +222,7 @@ if __name__ == '__main__':
     bboxes = []
     processor_task_num = []
 
-    frame_size_width = 1500
+    frame_size_width = 600
 
     # detected flag
     detection_ok = False
@@ -238,6 +236,9 @@ if __name__ == '__main__':
     # step 1:
     (grabbed, frame) = vs.read()
     frame = imutils.resize(frame, width=frame_size_width)
+    print("frame size:")
+    print(frame.shape[:2])
+
     (h, w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 0.007843, (w, h), 127.5)
     net.setInput(blob)

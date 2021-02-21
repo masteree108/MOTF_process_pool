@@ -149,7 +149,7 @@ if __name__ == '__main__':
     # detected flag
     detection_ok = False
 
-    frame_size_width = 1500
+    frame_size_width = 600
 
     # if below variable set to True, this result will not show tracking bbox on the video
     # ,it will show number on the terminal

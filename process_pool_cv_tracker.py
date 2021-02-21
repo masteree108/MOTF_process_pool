@@ -138,7 +138,7 @@ def main(detect_people_qty, detection_ok, pool, frame):
             #pool.join()
             pool_output = pool.map(start_tracker, input_data)    
 
-            print("before operating cv2")
+            #print("before operating cv2")
             for i in range(len(pool_output)):
                 #print(pool_output[i][0])
                 #print(box)
@@ -146,7 +146,7 @@ def main(detect_people_qty, detection_ok, pool, frame):
                 cv2.rectangle(frame, (startX, startY), (endX, endY),(0, 255, 0), 2)
                 cv2.putText(frame, "preson", (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
 
-        print("before imshow")
+        #print("before imshow")
         cv2.imshow("Frame", frame)
         key = cv2.waitKey(1) & 0xFF
 
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     # for saving tracker objects
     tracker_list = []
 
-    frame_size_width = 1500
+    frame_size_width = 600
 
     # detected flag
     detection_ok = False
