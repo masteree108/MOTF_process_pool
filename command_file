@@ -1,7 +1,7 @@
 the result table please watch compare_table.ods file
-1. multi-processor method
-   every processors to execute one tracker
-	please run below command to execute the program which using multi-processor method
+1. multi-processing method
+   every logical core to execute one openCV tracker
+	please run below command to execute the program which using multi-processing method
     (1) dlib tracker
        $ ./run_process_pool_dlib_tracker.sh
     (2) cv_tracker
@@ -15,17 +15,20 @@ the result table please watch compare_table.ods file
 	$ top | grep python
 	or
 	$ htop
+	or 
+	$ ./watch_cpu_loading_PPCT.sh (this not include watch about dlib_tracker infomation)
 
-2. one processor method(using multi-thread)
-   one processor to execute cv multi-tracker
-   $ ./run_one_processor_cv_multi_tracker.sh
+2. one logical core method(using multi-thread)
+   one logical core to execute openCV multi-tracker
+   $ ./run_one_logical_core_cv_multi_tracker.sh
 
-3. multi-processor and mulit-thrads method
-    every processors to execute cv multi tracker
+3. multi-processing and mulit-thrads method
+    every logical to execute openCV multi tracker
 	$ ./run_process_pool_cv_multi_tracker.sh
     and using below command at anoter terminal to watch all cpu loading
 	$ ps axu | grep [p]rocess_pool_cv_multi_tracker.py | awk '{print $2}' | xargs -n1 -I{} ps -o sid= -p {} | xargs -n1 -I{} ps --forest -o user,pid,ppid,cpuid,%cpu,%mem,stat,start,time,command -g {}
-	
+	or 
+	$./watch_cpu_loading_PPCMT.sh	
 if you wanna try another video, please visit below link, and modify video path in the run_MOTF_dlib.sh or run_MOTF_cv_tracker.sh
 https://drive.google.com/drive/folders/1UAoMQ07fZSa4XdDvKyOZhzxBrBSE1cxo?usp=sharing
 
